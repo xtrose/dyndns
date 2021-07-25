@@ -106,4 +106,70 @@ MY_SECRET -> Mot de passe sécurisé
 MON_DOMAINE.COM -> Domaine public de votre serveur Web (exemple.com)
 MY_EMAIL_ADDRESS -> Adresse e-mail de l'administrateur du serveur (mail@example.com)
 BLACKLISTED_SUBDOMAIN -> Saisissez tous les sous-domaines pour lesquels aucun transfert DynDNS ne peut être construit, y compris ceux qui gèrent le script.
-Si vous avez plus de sous-domaines pour d'autres sites Web ou des redirections qui n'ont pas changé
+Si vous avez d'autres sous-domaines pour d'autres sites Web ou des redirections qui ne doivent pas être modifiés, ajoutez-les tous ici.
+
+Ouvrez le fichier bash / server.sh et modifiez les entrées comme suit :
+/PATH/TO/UPDATE/DIRECTORY/ -> Le chemin d'accès au répertoire de mise à jour ultérieure doit être inséré dans votre répertoire de document créé (/var/www/[MY_SUBDOMAIN]/update)
+
+Ouvrez le fichier bash/client.sh et modifiez les entrées comme suit :
+DYNDNS.MY_DOMAIN.COM -> Le sous-domaine et le domaine générés doivent être saisis ici.
+MY_SECRET -> Remplacez-le par le même mot de passe sécurisé que vous avez entré dans le fichier index.php.
+MY_SUBDOMAIN -> Le nouveau sous-domaine sous lequel votre IP dynamique est accessible. (home.exemple.com)
+
+
+
+Copiez tous les fichiers du référentiel GIT dans le répertoire de documents créé sur votre serveur Web :
+Supprimez ensuite le fichier bash/client.sh sur votre serveur web. Cela sera utilisé plus tard pour les serveurs clients.
+S'il n'est pas disponible, créez les deux répertoires data et mettez-les à jour dans le répertoire de documents sur votre serveur Web.
+
+Attribuez ensuite les droits de tous les fichiers de votre répertoire de documents sur votre serveur Web à l'utilisateur Apache :
+$ sudo chown -R www-data:www-data /var/www/[MY_SUBDOMAIN]/
+
+
+
+Créez une tâche cron avec cron sur votre serveur Web
+Pour ce faire, le fichier dans votre répertoire de documents bash/server.sh doit être rendu exécutable :
+$ sudo chmod + x /var/www/[MY_SUBDOMAI]/bash/server.sh
+
+Lorsque vous appelez le crontable pour la première fois, vous devez sélectionner votre éditeur de texte préféré :
+$ sudo crontable -e
+
+Ajoutez la ligne suivante ci-dessous et enregistrez le fichier :
+* * * * * /bin/bash "/var/www/[MY_SUBDOMAIN]/bash/server.sh"
+
+Rechargez ensuite le crontable :
+$ sudo service cron recharger
+
+Vous avez maintenant créé une tâche cron qui vérifie chaque minute si une mise à jour a été créée pour une IP dynamique :
+Dès que le script index.php a créé un nouveau fichier apache dans le répertoire Update, celui-ci est copié dans le répertoire Apache et le serveur web est redémarré.
+
+
+
+Configuration du serveur client avec l'IP dynamique à atteindre via un sous-domaine
+Pour ce faire, copiez le fichier bash/client.sh à n'importe quel emplacement sur le serveur client et rendez le fichier exécutable :
+$ chmod + x /PATH_TO_FILE/client.sh
+
+Ouvrez le crontable sur votre serveur Cleint et créez une tâche cron qui exécute le fichier toutes les minutes :
+
+Lorsque vous appelez le crontable pour la première fois, vous devez sélectionner votre éditeur de texte préféré.
+$ crontable -e
+
+Ajoutez la ligne suivante ci-dessous et enregistrez le fichier :
+* * * * * /bin/bash "/PATH_TO_FILE/client.sh"
+
+Rechargez ensuite le crontable :
+$ service cron rechargement
+
+Vous avez maintenant créé une tâche cron qui appelle le fichier index.php sur votre serveur Web toutes les minutes.
+Le serveur Web vérifie si l'adresse IP du serveur client a changé et s'il y a un changement, il crée de nouveaux fichiers Apache et redémarre le serveur Web.
+
+
+
+Créer des serveurs clients supplémentaires avec des adresses IP dynamiques
+Le fichier bash/client.sh peut être utilisé avec n'importe quel nombre de serveurs clients avec des IP dynamiques :
+Remplacez MY_SUBDOMAIN dans le fichier par le sous-domaine sous lequel il doit être atteint.
+Copiez le fichier sur votre nouveau serveur client et configurez une nouvelle tâche cron.
+
+
+
+S'amuser
