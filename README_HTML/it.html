@@ -1,0 +1,207 @@
+<div class="mb-2">
+  <h3>
+    <strong>xtrose DynDNS Server</strong>
+  </h3>
+  <a href="https://github.com/xtrose/dyndns" target="_blank">
+    <i class="fab fa-github"></i> https://github.com/xtrose/dyndns
+  </a>
+</div>
+
+<div class="text-center mb-2">
+	<img src="/out/img/xtrose/apps/app/27/xtrose_dyndns_450_250.jpg" alt="xtrose-dyndns" title="xtrose-dyndns" style="max-width:100%">
+</div>
+
+Con xtrose DynDNS ottieni una soluzione DynDns semplice e gratuita senza provider esterni e costi nascosti.<br />
+Il server web online richiesto può creare un numero infinito di sottodomini per gli IP dinamici.<br />
+Il metodo utilizzato è di facile attuazione.<br />
+Per i server client, i server che hanno un IP dinamico, viene impostato un semplice cron job con cron, che invia una semplice query curl al server web a intervalli regolari.<br />
+Il server web, che riceve la richiesta curl con uno script PHP, verifica se l'IP del server client è cambiato e crea nuovi file di configurazione di Apache.<br />
+Un altro cron job sul server web controlla se ci sono nuovi file di configurazione di Apache, li copia nella directory di configurazione di Apache e riavvia l'applicazione Apache.<br />
+Con pochi script e una semplice configurazione, puoi creare rapidamente il tuo server DynDNS.<br /><br />
+
+<h3>
+  <strong>Necessario:</strong>
+</h3>
+- Server client - A casa (Linux)<br />
+- Server web - In linea (Linux)<br /><br />
+<strong>Richiesto (server client):</strong><br />
+- sudo diritti<br />
+- cron<br />
+<br />
+<strong>Richiesto (server web):</strong><br />
+- sudo diritti<br />
+- cron<br />
+- letsencrypt<br />
+- apache2 (web server)<br />
+- PHP<br />
+- Dominio pubblico<br /><br />
+
+<h3>
+  <strong>Clona o scarica i file</strong>
+</h3>
+Scarica o clona i file del repository GIT sul tuo computer:<br />
+<code class="text-primary">
+$ git clone "https://github.com/xtrose/dyndns.git"
+</code><br /><br />
+
+<h3>
+  <strong>Crea un sottodominio per il tuo server web</strong>
+</h3>
+Per prima cosa hai bisogno di un sottodominio sul tuo server web, che in seguito conterrà lo script PHP per elaborare le richieste del client.<br />
+Se non hai ancora familiarità con Apache, puoi utilizzare i file dalla directory File e adattarli di conseguenza.<br />
+Si prega di copiare i file per questo in un'altra directory, poiché questi saranno richiesti in seguito invariati.<br /><br />
+
+<strong>Sostituisci i campi tra parentesi quadre nei file come segue:</strong><br />
+- [SERVERADMIN] -> Indirizzo e-mail dell'amministratore del server.<br />
+- [SUBDOMAIN] -> Sottodominio che vengono attivati ​​per il server client.<br />
+- [DOMAIN] -> Dominio pubblico sotto il quale è possibile raggiungere il server web.<br /><br />
+
+<strong>Rimuovi le seguenti righe dal file apache-le-ssl.conf e sostituiscile:</strong><br />
+I file sono progettati per un proxy inverso a un IP.<br />
+Per lo script del server Web, il file deve essere adattato in modo che possa essere richiamato in una directory di documenti.<br />
+Sostituisci [MY_PATH] con un percorso reale a cui può accedere il tuo server Apache.<br /><br />
+
+<strong>Rimuovere:</strong><br />
+SSLProxyEngine On<br />
+ProxyPass / http://[IP]/<br />
+ProxyPassReverse / http://[IP]/<br /><br />
+
+<strong>Inserire:</strong><br />
+DocumentRoot /var/www/[MY_PATH]/<br /><br />
+
+<strong>Rinominare i 2 file come segue:</strong><br />
+apache.conf -> [MY_SUBDOMAIN].conf<br />
+apache-le-ssl.conf -> [MY_SUBDOMAIN] -le-ssl.conf<br /><br />
+
+<strong>Copia i due file che hai creato nella directory di configurazione di apache sul tuo server web:</strong><br />
+Assicurati di avere i diritti di root.<br />
+/etc/apache2/sites-enabled/<br /><br />
+
+<strong>Crea la directory dei documenti sul tuo server web come l'hai configurata nel file apache-le-ssl.conf e assegna i diritti all'utente apache:</strong><br />
+<code class="text-primary">
+$ sudo chown www-data: www-data /var/www/[MY_PATH]/
+</code>
+<br /><br />
+
+<strong>Riavvia l'applicazione apache2:</strong><br />
+<code class="text-primary">
+$ sudo service apache2 restart
+</code><br /><br />
+
+<strong>Crea un certificato Letsencrypt per il sottodominio appena creato:</strong><br />
+Sostituisci i campi tra parentesi quadre con i dati del sottodominio e del dominio nel comando.<br />
+<code class="text-primary">
+$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www.[SUBDOMAIN].[DOMAIN] --apache --renew-by-default</code>
+<br /><br />
+
+<strong>pri il file copiato [MY_SUBDOMAIN] -le-ssl.conf nella tua directory Apache e rimuovi # dalle seguenti righe:</strong><br />
+Si prega di notare che sono necessari i diritti di root per questo.<br />
+Prendere nota del percorso del certificatoletsencrypt e adattarlo al percorso del certificato creato.<br />
+# Include /etc/letsencrypt/options-ssl-apache.conf<br />
+# SSLCertificateFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/fullchain.pem<br />
+# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/privatekey.pem<br /><br />
+
+<strong>Riavvia l'applicazione apache2:</strong><br />
+<code class="text-primary">
+$ sudo service apache2 restart
+</code>
+<br /><br />
+
+Ora hai creato un sottodominio per il tuo server che dovrebbe essere accessibile dall'esterno.<br />
+Tutte le richieste al sottodominio verranno eseguite dall'applicazione nella directory dei documenti configurata.<br />
+Tutte le richieste http vengono reindirizzate a https.<br />
+Si prega di notare che il certificatoletsencrypt deve essere rinnovato ogni 3 mesi.<br />
+Puoi automatizzarlo in un secondo momento usando cron.<br /><br />
+
+<h3>
+  <strong>Configura i file xtrose DynDNS</strong>
+</h3>
+<strong>Apri il file index.php dal repository GIT scaricato e modifica le voci in "// Config". come segue:</strong><br />
+MY_SECRET -> Password sicura<br />
+MY_DOMAIN.COM -> Dominio pubblico del tuo server web (example.com)<br />
+MY_EMAIL_ADDRESS -> Indirizzo email dell'amministratore del server (mail@example.com)<br />
+BLACKLISTED_SUBDOMAIN -> Inserisci tutti i sottodomini per i quali non può essere costruito alcun inoltro DynDNS, inclusi quelli che gestiscono lo script.<br />
+Se disponi di ulteriori sottodomini per altri siti Web o reindirizzamenti che non devono essere modificati, aggiungili tutti qui.<br /><br />
+
+<strong>Apri il file bash / server.sh e modifica le voci come segue:</strong><br />
+/PATH/TO/UPDATE/DIRECTORY/ -> Il percorso della directory di aggiornamento successivo deve essere inserito nella directory del documento creato (/var/www/[MY_SUBDOMAIN]/update)<br /><br />
+
+<strong>Apri il file bash/client.sh e modifica le voci come segue:</strong><br />
+DYNDNS.MY_DOMAIN.COM -> Il sottodominio e il dominio generati devono essere inseriti qui.<br />
+MY_SECRET -> Sostituiscilo con la stessa password sicura che hai inserito nel file index.php.<br />
+MY_SUBDOMAIN -> Il nuovo sottodominio sotto il quale è possibile accedere al tuo IP dinamico. (home.esempio.com)<br /><br />
+
+<strong>Copia tutti i file dal repository GIT nella directory dei documenti creata sul tuo server web:</strong><br />
+Quindi elimina il file bash/client.sh sul tuo server web. Questo verrà utilizzato in seguito per i server client.<br />
+Se non è disponibile, crea i dati delle due directory e aggiorna nella directory dei documenti sul tuo server web.<br /><br />
+
+<strong>Quindi assegna i diritti di tutti i file nella directory dei documenti sul tuo server web all'utente apache:</strong><br />
+<code class="text-primary">
+$ sudo chown -R www-data:www-data /var/www/[MY_SUBDOMAIN]/</code>
+<br /><br />
+
+<h3>
+  <strong>Crea un lavoro cron con cron sul tuo server web</strong>
+</h3>
+<strong>Per fare ciò, il file nella directory del documento bash/server.sh deve essere reso eseguibile:</strong><br />
+<code class="text-primary">
+$ sudo chmod + x /var/www/[MY_SUBDOMAIN]/bash/server.sh
+</code>
+<br /><br />
+
+<strong>Quando richiami il crontabile per la prima volta, devi selezionare il tuo editor di testo preferito:</strong><br />
+<code class="text-primary">
+$ sudo crontable -e
+</code><br /><br />
+
+<strong>Aggiungi la seguente riga di seguito e salva il file:</strong><br />
+<code class="text-primary">
+* * * * * /bin/bash "/var/www/[MY_SUBDOMAIN]/bash/server.sh"
+</code>
+<br /><br />
+
+<strong>Quindi ricaricare il crontabile:</strong><br />
+<code class="text-primary">
+$ sudo service cron reload</code>
+<br /><br />
+
+Ora hai creato un cron job che controlla ogni minuto se è stato creato un aggiornamento per un IP dinamico:<br />
+Non appena lo script index.php ha creato un nuovo file apache nella directory Update, questo viene copiato nella directory Apache e il server web viene riavviato.<br /><br />
+
+<h3>
+  <strong>Configurazione del server client con l'IP dinamico che deve essere raggiunto tramite un sottodominio</strong>
+</h3>
+<strong>Per fare ciò, copia il file bash/client.sh in qualsiasi posizione sul server client e rendi eseguibile il file:</strong><br />
+<code class="text-primary">
+$ chmod + x /PATH_TO_FILE/client.sh
+</code>
+<br /><br />
+
+<strong>Apri il crontable sul tuo server Cleint e crea un cron job che esegua il file ogni minuto:</strong><br />
+Quando richiami il crontabile per la prima volta, devi selezionare il tuo editor di testo preferito:<br />
+<code class="text-primary">
+$ crontable -e
+</code><br /><br />
+
+<strong>Aggiungi la seguente riga di seguito e salva il file:</strong><br />
+<code class="text-primary">
+* * * * * /bin/bash "/PATH_TO_FILE/client.sh"
+</code>
+<br /><br />
+
+<strong>Quindi ricaricare il crontabile:</strong><br />
+<code class="text-primary">
+$ service cron reload
+</code>
+<br /><br />
+
+Ora hai creato un cron job che chiama il file index.php sul tuo server web ogni minuto.<br />
+Il server web controlla se l'IP del server client è cambiato e se c'è un cambiamento crea nuovi file Apache e riavvia il server web.<br /><br />
+
+<h3>
+  <strong>Crea server client aggiuntivi con IP dinamici</strong>
+</h3>
+Il file bash/client.sh può essere utilizzato con qualsiasi numero di server client con IP dinamici:<br />
+Cambia MY_SUBDOMAIN nel file con il sottodominio sotto il quale deve essere raggiunto.<br />
+Copia il file sul tuo nuovo server client e imposta un nuovo cron job.<br /><br />
+<strong>Divertiti</strong>

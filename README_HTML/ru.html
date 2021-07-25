@@ -1,0 +1,207 @@
+<div class="mb-2">
+  <h3>
+    <strong>xtrose DynDNS Cервер</strong>
+  </h3>
+  <a href="https://github.com/xtrose/dyndns" target="_blank">
+    <i class="fab fa-github"></i> https://github.com/xtrose/dyndns
+  </a>
+</div>
+
+<div class="text-center mb-2">
+	<img src="/out/img/xtrose/apps/app/27/xtrose_dyndns_450_250.jpg" alt="xtrose-dyndns" title="xtrose-dyndns" style="max-width:100%">
+</div>
+
+С xtrose DynDNS вы получаете простое бесплатное решение DynDns без внешних поставщиков и скрытых затрат.<br />
+Требуемый онлайн-сервер может создавать бесконечное количество поддоменов для динамических IP-адресов.<br />
+Используемый метод прост в реализации.<br />
+Для клиентских серверов, серверов с динамическим IP-адресом, простое задание cron настраивается с помощью cron, который через регулярные промежутки времени отправляет простой запрос curl на веб-сервер.<br />
+Веб-сервер, который получает запрос curl с помощью сценария PHP, проверяет, изменился ли IP-адрес клиентского сервера, и создает новые файлы конфигурации Apache.<br />
+Другое задание cron на веб-сервере проверяет наличие новых файлов конфигурации Apache, копирует их в каталог конфигурации Apache и перезапускает приложение Apache.<br />
+С помощью всего нескольких скриптов и простой настройки вы можете быстро создать свой собственный сервер DynDNS.<br /><br />
+
+<h3>
+  <strong>Нужный:</strong>
+</h3>
+- Клиентский сервер - Дома (Linux)<br />
+- Веб-сервер - Онлайн (Linux)<br /><br />
+<strong>Обязательно (клиент-сервер):</strong><br />
+- права sudo<br />
+- cron<br />
+<br />
+<strong>Обязательно (веб-сервер):</strong><br />
+- права sudo<br />
+- cron<br />
+- letsencrypt<br />
+- apache2 (веб-сервер)<br />
+- PHP<br />
+- Всеобщее достояние<br /><br />
+
+<h3>
+  <strong>Клонировать или скачать файлы</strong>
+</h3>
+Загрузите или клонируйте файлы репозитория GIT на свой компьютер:<br />
+<code class="text-primary">
+$ git clone "https://github.com/xtrose/dyndns.git"
+</code><br /><br />
+
+<h3>
+  <strong>Создайте поддомен для своего веб-сервера</strong>
+</h3>
+Сначала вам понадобится субдомен на вашем веб-сервере, который позже будет содержать скрипт PHP для обработки клиентских запросов.<br />
+Если вы еще не знакомы с Apache, вы можете использовать файлы из каталога Files и соответствующим образом адаптировать их.<br />
+Скопируйте файлы для этого в другой каталог, так как они потребуются позже без изменений.<br /><br />
+
+<strong>Замените поля в квадратных скобках в файлах следующим образом:</strong><br />
+- [SERVERADMIN] -> Электронный адрес администратора сервера.<br />
+- [SUBDOMAIN] -> Поддомен, который запускается для клиентского сервера.<br />
+- [DOMAIN] -> Общедоступный домен, под которым можно получить доступ к веб-серверу.<br /><br />
+
+<strong>Удалите следующие строки из файла apache-le-ssl.conf и замените их:</strong><br />
+Файлы предназначены для обратного прокси на IP.<br />
+Для сценария веб-сервера файл должен быть адаптирован так, чтобы его можно было вызывать в каталоге документов.<br />
+Замените [MY_PATH] реальным путем, к которому может получить доступ ваш сервер Apache.<br /><br />
+
+<strong>Удалять:</strong><br />
+SSLProxyEngine On<br />
+ProxyPass / http://[IP]/<br />
+ProxyPassReverse / http://[IP]/<br /><br />
+
+<strong>Вставлять:</strong><br />
+DocumentRoot /var/www/[MY_PATH]/<br /><br />
+
+<strong>Переименуйте 2 файла следующим образом:</strong><br />
+apache.conf -> [MY_SUBDOMAIN].conf<br />
+apache-le-ssl.conf -> [MY_SUBDOMAIN]-le-ssl.conf<br /><br />
+
+<strong>Скопируйте два файла, которые вы создали, в каталог конфигурации apache на вашем веб-сервере:</strong><br />
+Убедитесь, что у вас есть root права.<br />
+/etc/apache2/sites-enabled/<br /><br />
+
+<strong>Создайте каталог документов на своем веб-сервере, как вы настроили его в файле apache-le-ssl.conf, и назначьте права пользователю apache:</strong><br />
+<code class="text-primary">
+$ sudo chown www-data: www-data /var/www/[MY_PATH]/
+</code>
+<br /><br />
+
+<strong>Перезапустите приложение apache2:</strong><br />
+<code class="text-primary">
+$ sudo service apache2 restart
+</code><br /><br />
+
+<strong>Создайте сертификат Letsencrypt для вновь созданного поддомена:</strong><br />
+Замените поля в квадратных скобках данными вашего поддомена и домена в команде.<br />
+<code class="text-primary">
+$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www.[SUBDOMAIN].[DOMAIN] --apache --renew-by-default</code>
+<br /><br />
+
+<strong>Откройте скопированный файл [MY_SUBDOMAIN] -le-ssl.conf в каталоге Apache и удалите # из следующих строк:</strong><br />
+Обратите внимание, что для этого вам понадобятся root права.<br />
+Запишите путь к сертификату letsencrypt и адаптируйте его к пути к созданному сертификату.<br />
+# Include /etc/letsencrypt/options-ssl-apache.conf<br />
+# SSLCertificateFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/fullchain.pem<br />
+# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/privatekey.pem<br /><br />
+
+<strong>Перезапустите приложение apache2:</strong><br />
+<code class="text-primary">
+$ sudo service apache2 restart
+</code>
+<br /><br />
+
+Теперь вы создали поддомен для своего сервера, который должен быть доступен извне.<br />
+Все запросы к поддомену будут выполняться приложением в настроенном каталоге документов.<br />
+Все HTTP-запросы перенаправляются на https.<br />
+Обратите внимание, что сертификат letsencrypt необходимо обновлять каждые 3 месяца.<br />
+Вы можете автоматизировать это позже, используя cron.<br /><br />
+
+<h3>
+  <strong>Настройте файлы xtrose DynDNS</strong>
+</h3>
+<strong>Откройте файл index.php из загруженного репозитория GIT и измените записи в разделе «// Config.» следующим образом:</strong><br />
+MY_SECRET -> Безопасный пароль<br />
+MY_DOMAIN.COM -> Публичный домен вашего веб-сервера (example.com)<br />
+MY_EMAIL_ADDRESS -> Электронный адрес администратора сервера (mail@example.com)<br />
+BLACKLISTED_SUBDOMAIN -> Введите все поддомены, для которых не может быть построена пересылка DynDNS, включая те, которые управляют сценарием.<br />
+Если у вас есть дополнительные поддомены для других веб-сайтов или перенаправления, которые нельзя изменять, добавьте их все сюда.<br /><br />
+
+<strong>Откройте файл bash / server.sh и измените записи следующим образом:</strong><br />
+/PATH/TO/UPDATE/DIRECTORY/ -> Путь к каталогу более позднего обновления должен быть вставлен в созданный вами каталог документов (/var/www/[MY_SUBDOMAIN]/update)<br /><br />
+
+<strong>Откройте файл bash / client.sh и измените записи следующим образом:</strong><br />
+DYNDNS.MY_DOMAIN.COM -> Здесь необходимо ввести сгенерированный субдомен и домен.<br />
+MY_SECRET -> Замените его тем же безопасным паролем, который вы ввели в файл index.php.<br />
+MY_SUBDOMAIN -> Новый поддомен, под которым можно получить доступ к вашему динамическому IP. (home.example.com)<br /><br />
+
+<strong>Скопируйте все файлы из репозитория GIT в созданный каталог документов на вашем веб-сервере:</strong><br />
+Затем удалите файл bash / client.sh на своем веб-сервере. Это будет использоваться позже для клиентских серверов.<br />
+Если он недоступен, создайте данные двух каталогов и обновите их в каталоге документов на вашем веб-сервере.<br /><br />
+
+<strong>Затем назначьте права на все файлы в каталоге документов на веб-сервере пользователю apache:</strong><br />
+<code class="text-primary">
+$ sudo chown -R www-data:www-data /var/www/[MY_SUBDOMAIN]/</code>
+<br /><br />
+
+<h3>
+  <strong>Создайте задание cron с помощью cron на вашем веб-сервере</strong>
+</h3>
+<strong>Для этого файл в каталоге документов bash/server.sh необходимо сделать исполняемым:</strong><br />
+<code class="text-primary">
+$ sudo chmod + x /var/www/[MY_SUBDOMAIN]/bash/server.sh
+</code>
+<br /><br />
+
+<strong>Когда вы вызываете crontable в первый раз, вы должны выбрать свой любимый текстовый редактор:</strong><br />
+<code class="text-primary">
+$ sudo crontable -e
+</code><br /><br />
+
+<strong>Добавьте следующую строку ниже и сохраните файл:</strong><br />
+<code class="text-primary">
+* * * * * /bin/bash "/var/www/[MY_SUBDOMAIN]/bash/server.sh"
+</code>
+<br /><br />
+
+<strong>Затем перезагрузите crontable:</strong><br />
+<code class="text-primary">
+$ sudo service cron reload</code>
+<br /><br />
+
+Теперь вы создали задание cron, которое каждую минуту проверяет, было ли создано обновление для динамического IP:<br />
+Как только сценарий index.php создает новый файл apache в каталоге обновлений, он копируется в каталог Apache, и веб-сервер перезапускается.<br /><br />
+
+<h3>
+  <strong>Настройка клиентского сервера с динамическим IP-адресом, который должен быть достигнут через поддомен</strong>
+</h3>
+<strong>Для этого скопируйте файл bash/client.sh в любое место на клиентском сервере и сделайте файл исполняемым:</strong><br />
+<code class="text-primary">
+$ chmod + x /PATH_TO_FILE/client.sh
+</code>
+<br /><br />
+
+<strong>Откройте crontable на своем сервере Cleint и создайте задание cron, которое выполняет файл каждую минуту:</strong><br />
+Когда вы вызываете crontable в первый раз, вы должны выбрать свой любимый текстовый редактор.<br />
+<code class="text-primary">
+$ crontable -e
+</code><br /><br />
+
+<strong>Добавьте следующую строку ниже и сохраните файл:</strong><br />
+<code class="text-primary">
+* * * * * /bin/bash "/PATH_TO_FILE/client.sh"
+</code>
+<br /><br />
+
+<strong>Затем перезагрузите crontable:</strong><br />
+<code class="text-primary">
+$ service cron reload
+</code>
+<br /><br />
+
+Теперь вы создали задание cron, которое каждую минуту вызывает файл index.php на вашем веб-сервере.<br />
+Веб-сервер проверяет, изменился ли IP-адрес клиентского сервера, и если есть изменение, он создает новые файлы Apache и перезапускает веб-сервер.<br /><br />
+
+<h3>
+  <strong>Создайте дополнительные клиентские серверы с динамическими IP's'</strong>
+</h3>
+Файл bash/client.sh можно использовать с любым количеством клиентских серверов с динамическими IP-адресами:<br />
+Измените MY_SUBDOMAIN в файле на субдомен, под которым он должен быть достигнут.<br />
+Скопируйте файл на новый клиентский сервер и настройте новое задание cron.<br /><br />
+<strong>Желаю хорошо провести время</strong>

@@ -75,21 +75,21 @@ apache-le-ssl.conf -> [MY_SUBDOMAIN] -le-ssl.conf
 $ sudo chown www-data: www-data /var/www/[MY_PATH]/
 
 Перезапустите приложение apache2:
-$ sudo service apache2 перезапуск
+$ sudo service apache2 restart
 
 Создайте сертификат Letsencrypt для вновь созданного поддомена:
 Замените поля в квадратных скобках данными вашего поддомена и домена в команде.
-$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www. [SUBDOMAIN].[DOMAIN] --apache --renew-по умолчанию
+$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www.[SUBDOMAIN].[DOMAIN] --apache --renew-by-default
 
 Откройте скопированный файл [MY_SUBDOMAIN] -le-ssl.conf в каталоге Apache и удалите # из следующих строк:
 Обратите внимание, что для этого вам понадобятся root права.
 Запишите путь к сертификату letsencrypt и адаптируйте его к пути к созданному сертификату.
-# Включить /etc/letsencrypt/options-ssl-apache.conf
-# SSLCertificateFile /etc
-# SSLCertificateKeyFile /etc/letsencrypt/live/[DOMAIN]
+# Include /etc/letsencrypt/options-ssl-apache.conf<br />
+# SSLCertificateFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/fullchain.pem<br />
+# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/privatekey.pem<br /><br />
 
 Перезапустите приложение apache2:
-$ sudo service apache2 перезапуск
+$ sudo service apache2 restart
 
 Теперь вы создали поддомен для своего сервера, который должен быть доступен извне.
 Все запросы к поддомену будут выполняться приложением в настроенном каталоге документов.
@@ -119,7 +119,7 @@ MY_SUBDOMAIN -> Новый поддомен, под которым можно п
 
 
 Скопируйте все файлы из репозитория GIT в созданный каталог документов на вашем веб-сервере:
-Затем удалите файл bash / client.sh на своем веб-сервере. Это будет использоваться позже для клиентских серверов.
+Затем удалите файл bash/client.sh на своем веб-сервере. Это будет использоваться позже для клиентских серверов.
 Если он недоступен, создайте данные двух каталогов и обновите их в каталоге документов на вашем веб-сервере.
 
 Затем назначьте права на все файлы в каталоге документов на веб-сервере пользователю apache:

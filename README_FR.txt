@@ -20,13 +20,13 @@ Nécessaire:
 - Serveur Web - En ligne (Linux)
 
 Obligatoire (client serveur) :
-- droits sudo
+- Droits sudo
 - cron
 
 Obligatoire (serveur Web) :
-- droits sudo
+- Droits sudo
 - cron
-- permet de crypter
+- letsencrypt
 - apache2 (serveur web)
 - PHP
 - Domaine public
@@ -47,8 +47,8 @@ Veuillez copier les fichiers correspondants dans un autre répertoire, car ils s
 
 Remplacez les champs entre crochets dans les fichiers comme suit :
 - [SERVERADMIN] -> Adresse e-mail de l'administrateur du serveur.
-- [SOUS-DOMAINE] -> Sous-domaine qui sont déclenchés pour le serveur client.
-- [DOMAINE] -> Domaine public sous lequel le serveur Web est accessible.
+- [SUBDOMAINE] -> Sous-domaine qui sont déclenchés pour le serveur client.
+- [DOMAIN] -> Domaine public sous lequel le serveur Web est accessible.
 
 Supprimez les lignes suivantes du fichier apache-le-ssl.conf et remplacez-les :
 Les fichiers sont conçus pour un proxy inverse vers une adresse IP.
@@ -61,11 +61,11 @@ ProxyPass / http://[IP]/
 ProxyPassReverse / http://[IP]/
 
 Insérer:
-DocumentRoot /var/www/[MON_CHEMIN]/
+DocumentRoot /var/www/[MY_PATH]/
 
 Renommez les 2 fichiers comme suit :
-apache.conf -> [MON_SOUS-DOMAINE] .conf
-apache-le-ssl.conf -> [MON_SOUS-DOMAINE] -le-ssl.conf
+apache.conf -> [MY_SUBDOMAIN].conf
+apache-le-ssl.conf -> [MY_SUBDOMAIN]-le-ssl.conf
 
 Copiez les deux fichiers que vous avez créés dans le répertoire de configuration d'Apache sur votre serveur Web :
 Assurez-vous que vous disposez des droits root.
@@ -79,17 +79,17 @@ $ sudo service apache2 redémarrer
 
 Créez un certificat Letsencrypt pour le sous-domaine nouvellement créé :
 Remplacez les champs entre crochets par vos données de sous-domaine et de domaine dans la commande.
-$ certbot certonly -d [SOUS-DOMAINE]. [DOMAINE] -d www. [SOUS-DOMAINE]. [DOMAINE] --apache --renew-by-default
+$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www.[SUBDOMAIN].[DOMAIN] --apache --renew-by-default
 
 Ouvrez le fichier copié [MY_SUBDOMAIN] -le-ssl.conf dans votre répertoire Apache et supprimez # des lignes suivantes :
 Veuillez noter que vous avez besoin des droits root pour cela.
 Notez le chemin d'accès au certificat letsencrypt et adaptez-le au chemin d'accès au certificat créé.
-# Inclure /etc/letsencrypt/options-ssl-apache.conf
-# SSLCertificateFile /etc.
-# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN]
+# Include /etc/letsencrypt/options-ssl-apache.conf
+# SSLCertificateFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/fullchain.pem
+# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/privatekey.pem
 
 Redémarrez l'application apache2 :
-$ sudo service apache2 redémarrer
+$ sudo service apache2 restart
 
 Vous avez maintenant créé un sous-domaine pour votre serveur qui devrait être accessible de l'extérieur.
 Toutes les requêtes au sous-domaine seront effectuées par l'application dans le répertoire de documents configuré.
@@ -100,7 +100,7 @@ Vous pouvez automatiser cela ultérieurement à l'aide de cron.
 
 
 
-Configurer les fichiers xTrose DynDNS
+Configurer les fichiers xtrose DynDNS
 Ouvrez le fichier index.php à partir du référentiel GIT téléchargé et modifiez les entrées sous "// Config." comme suit:
 MY_SECRET -> Mot de passe sécurisé
 MON_DOMAINE.COM -> Domaine public de votre serveur Web (exemple.com)
@@ -138,14 +138,14 @@ Ajoutez la ligne suivante ci-dessous et enregistrez le fichier :
 * * * * * /bin/bash "/var/www/[MY_SUBDOMAIN]/bash/server.sh"
 
 Rechargez ensuite le crontable :
-$ sudo service cron recharger
+$ sudo service cron reload
 
-Vous avez maintenant créé une tâche cron qui vérifie chaque minute si une mise à jour a été créée pour une IP dynamique :
+Vous avez maintenant créé une tâche cron qui vérifie chaque minute si une mise à jour a été créée pour une IP dynamique.
 Dès que le script index.php a créé un nouveau fichier apache dans le répertoire Update, celui-ci est copié dans le répertoire Apache et le serveur web est redémarré.
 
 
 
-Configuration du serveur client avec l'IP dynamique à atteindre via un sous-domaine
+Configuration du serveur client avec l'IP dynamique à atteindre via un subdomain
 Pour ce faire, copiez le fichier bash/client.sh à n'importe quel emplacement sur le serveur client et rendez le fichier exécutable :
 $ chmod + x /PATH_TO_FILE/client.sh
 
@@ -158,7 +158,7 @@ Ajoutez la ligne suivante ci-dessous et enregistrez le fichier :
 * * * * * /bin/bash "/PATH_TO_FILE/client.sh"
 
 Rechargez ensuite le crontable :
-$ service cron rechargement
+$ service cron reload
 
 Vous avez maintenant créé une tâche cron qui appelle le fichier index.php sur votre serveur Web toutes les minutes.
 Le serveur Web vérifie si l'adresse IP du serveur client a changé et s'il y a un changement, il crée de nouveaux fichiers Apache et redémarre le serveur Web.

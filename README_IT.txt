@@ -5,7 +5,7 @@ Mail: media.studio@xtrose.com
 
 
 
-Con XTrose DynDNS ottieni una soluzione DynDns semplice e gratuita senza provider esterni e costi nascosti.
+Con xtrose DynDNS ottieni una soluzione DynDns semplice e gratuita senza provider esterni e costi nascosti.
 Il server web online richiesto può creare un numero infinito di sottodomini per gli IP dinamici.
 Il metodo utilizzato è di facile attuazione.
 Per i server client, i server che hanno un IP dinamico, viene impostato un semplice cron job con cron, che invia una semplice query curl al server web a intervalli regolari.
@@ -47,8 +47,8 @@ Si prega di copiare i file per questo in un'altra directory, poiché questi sara
 
 Sostituisci i campi tra parentesi quadre nei file come segue:
 - [SERVERADMIN] -> Indirizzo e-mail dell'amministratore del server.
-- [SOTTODOMINIO] -> Sottodominio che vengono attivati ​​per il server client.
-- [DOMINIO] -> Dominio pubblico sotto il quale è possibile raggiungere il server web.
+- [SUBDOMAIN] -> Sottodominio che vengono attivati ​​per il server client.
+- [DOMAIN] -> Dominio pubblico sotto il quale è possibile raggiungere il server web.
 
 Rimuovi le seguenti righe dal file apache-le-ssl.conf e sostituiscile:
 I file sono progettati per un proxy inverso a un IP.
@@ -79,14 +79,14 @@ $ sudo service apache2 restart
 
 Crea un certificato Letsencrypt per il sottodominio appena creato:
 Sostituisci i campi tra parentesi quadre con i dati del sottodominio e del dominio nel comando.
-$ certbot certonly -d [SOTTODOMINIO]. [DOMINIO] -d www. [SOTTODOMINIO]. [DOMINIO] --apache --renew-by-default
+$ certbot certonly -d [SUBDOMAIN].[DOMAIN] -d www.[SUBDOMAIN].[DOMAIN] --apache --renew-by-default
 
 Apri il file copiato [MY_SUBDOMAIN] -le-ssl.conf nella tua directory Apache e rimuovi # dalle seguenti righe:
 Si prega di notare che sono necessari i diritti di root per questo.
 Prendere nota del percorso del certificatoletsencrypt e adattarlo al percorso del certificato creato.
-# Includi /etc/letsencrypt/options-ssl-apache.conf
-# SSLCertificateFile /etc.
-# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN]
+# Include /etc/letsencrypt/options-ssl-apache.conf
+# SSLCertificateFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/fullchain.pem
+# SSLCertificateKeyFile /etc/letsencrypt/live/[SUBDOMAIN].[DOMAIN]/privatekey.pem
 
 Riavvia l'applicazione apache2:
 $ sudo service apache2 restart
@@ -158,7 +158,7 @@ Aggiungi la seguente riga di seguito e salva il file:
 * * * * * /bin/bash "/PATH_TO_FILE/client.sh"
 
 Quindi ricaricare il crontabile:
-$ servizio cron ricarica
+$ sudo service cron reload
 
 Ora hai creato un cron job che chiama il file index.php sul tuo server web ogni minuto.
 Il server web controlla se l'IP del server client è cambiato e se c'è un cambiamento crea nuovi file Apache e riavvia il server web.
